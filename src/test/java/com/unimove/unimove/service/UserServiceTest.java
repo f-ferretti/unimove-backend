@@ -128,7 +128,7 @@ class UserServiceTest {
                 .hasMessage("Utente non trovato");
     }
 
-     @Test
+    @Test
     void updateIban_utenteTrovato_aggiornaIBAN() {
         UpdateIbanRequest request = new UpdateIbanRequest();
         request.setIban("IT1234567890123456789012345");
@@ -139,7 +139,7 @@ class UserServiceTest {
         userService.updateIban("l.lanese", request);
 
         verify(userRepository).save(argThat(user ->
-                        user.getIban().equals("IT1234567890123456789012345") &&
+                user.getIban().equals("IT1234567890123456789012345") &&
                         user.getIbanHolder().equals("Luca Lanese")));
     }
 

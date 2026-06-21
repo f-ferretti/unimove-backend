@@ -21,8 +21,6 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -155,7 +153,7 @@ class RideServiceTest {
         List<RideResponse> results = rideService.searchRide(null, "Campobasso", null, null);
 
         assertThat(results).hasSize(1);
-        assertThat(results.get(0).getDepartureCity()).isEqualTo("Campobasso");
+        assertThat(results.getFirst().getDepartureCity()).isEqualTo("Campobasso");
     }
 
     @Test

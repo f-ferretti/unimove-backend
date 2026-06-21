@@ -26,9 +26,6 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -82,7 +79,7 @@ class UserServiceTest {
 
         assertThat(response.getUsername()).isEqualTo("l.lanese");
         assertThat(response.getUpcomingRides()).hasSize(1);
-        assertThat(response.getUpcomingRides().get(0).getDepartureCity()).isEqualTo("Campobasso");
+        assertThat(response.getUpcomingRides().getFirst().getDepartureCity()).isEqualTo("Campobasso");
     }
 
     @Test
@@ -168,7 +165,7 @@ class UserServiceTest {
         List<RoutePreferenceResponse> routes = userService.getRoutes("l.lanese");
 
         assertThat(routes).hasSize(1);
-        assertThat(routes.get(0).getCityFrom()).isEqualTo("Campobasso");
+        assertThat(routes.getFirst().getCityFrom()).isEqualTo("Campobasso");
     }
 
     @Test

@@ -27,8 +27,6 @@ public interface RideRepository extends JpaRepository<Ride, java.util.UUID> {
             @Param("date") java.time.LocalDate date
     );
 
-    String driver(User driver);
-
     @Query("""
                 SELECT r FROM Ride r
                 WHERE r.driver = :driver

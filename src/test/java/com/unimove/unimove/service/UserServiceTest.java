@@ -26,9 +26,6 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -82,7 +79,7 @@ class UserServiceTest {
 
         assertThat(response.getUsername()).isEqualTo("l.lanese");
         assertThat(response.getUpcomingRides()).hasSize(1);
-        assertThat(response.getUpcomingRides().get(0).getDepartureCity()).isEqualTo("Campobasso");
+        assertThat(response.getUpcomingRides().getFirst().getDepartureCity()).isEqualTo("Campobasso");
     }
 
     @Test
@@ -128,7 +125,7 @@ class UserServiceTest {
                 .hasMessage("Utente non trovato");
     }
 
-     @Test
+    @Test
     void updateIban_utenteTrovato_aggiornaIBAN() {
         UpdateIbanRequest request = new UpdateIbanRequest();
         request.setIban("IT1234567890123456789012345");
@@ -139,7 +136,7 @@ class UserServiceTest {
         userService.updateIban("l.lanese", request);
 
         verify(userRepository).save(argThat(user ->
-                        user.getIban().equals("IT1234567890123456789012345") &&
+                user.getIban().equals("IT1234567890123456789012345") &&
                         user.getIbanHolder().equals("Luca Lanese")));
     }
 
@@ -168,7 +165,7 @@ class UserServiceTest {
         List<RoutePreferenceResponse> routes = userService.getRoutes("l.lanese");
 
         assertThat(routes).hasSize(1);
-        assertThat(routes.get(0).getCityFrom()).isEqualTo("Campobasso");
+        assertThat(routes.getFirst().getCityFrom()).isEqualTo("Campobasso");
     }
 
     @Test
@@ -252,5 +249,17 @@ class UserServiceTest {
                 .hasMessage("Non sei autorizzato a eliminare questa tratta preferita");
 
         verify(routePreferenceRepository, never()).delete(route);
+    }
+    @Test
+    void deleteRoute_trattaNonTrovata_lanciaEccezione() {
+        UUID routeId = UUID.randomUUID();
+
+        when(userRepository.findByUsername("l.lanese")).thenReturn(Optional.of(testUser));
+        when(routePreferenceRepository.findById(routeId)).thenReturn(Optional.empty());
+
+
+        assertThatThrownBy(() -> userService.deleteRoute("l.lanese", routeId))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Tratta preferita non trovata");
     }
 }

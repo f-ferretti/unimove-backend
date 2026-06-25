@@ -10,7 +10,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class RideService {
@@ -61,8 +63,67 @@ public class RideService {
                 .toList();
     }
 
+    @Transactional
+    public RideResponse startRide(String username, UUID rideId) {
+
+        User driver = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Utente non trovato"));
+
+        Ride ride = rideRepository.findById(rideId)
+                .orElseThrow(() -> new RuntimeException("Corsa non trovata"));
+
+        if (!ride.getDriver().getId().equals(driver.getId())) {
+            throw new RuntimeException("Non sei il guidatore di questa corsa");
+        }
+
+        if (!ride.getStatus().equals("OPEN")) {
+            throw new RuntimeException("Corsa non ancora disponibile per partenza");
+        }
+
+        ride.setStatus("IN_PROGRESS");
+        rideRepository.save(ride);
+
+        return rideMapper.toResponse(ride);
+    }
+
+    @Transactional
+    public void deleteRide(String username, UUID rideId) {
+
+        User driver = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Utente non trovato"));
+
+        Ride ride = rideRepository.findById(rideId)
+                .orElseThrow(() -> new RuntimeException("Corsa non trovata"));
+
+        if (!ride.getDriver().getId().equals(driver.getId())) {
+            throw new RuntimeException("Non sei il guidatore di questa corsa");
+        }
+
+        if (!ride.getStatus().equals("OPEN")) {
+            throw new RuntimeException("Corsa non ancora disponibile per cancellazione");
+        }
+
+        if (LocalDateTime.now().isAfter(ride.getDepartureTime().minusHours(48))) {
+            throw new RuntimeException("Non puoi cancellare una corsa con meno di 48 ore dalla partenza");
+        }
+
+        rideRepository.delete(ride);
+    }
+
+    @Transactional(readOnly = true)
+    public List<RideResponse> getMyRides(String username, String status) {
+
+        User driver = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Utente non trovato"));
+
+        return rideRepository.findByDriverAndStatus(driver, status)
+                .stream()
+                .map(rideMapper::toResponse)
+                .toList();
+    }
+
     private String getHotspot(List<String> hotspots, int index) {
-        if(hotspots == null || hotspots.size() <= index) {
+        if (hotspots == null || hotspots.size() <= index) {
             return null;
         }
         return hotspots.get(index);

@@ -18,6 +18,9 @@ import java.util.UUID;
 @Service
 public class BookingService {
 
+    private static final String UTENTE_NON_TROVATO = "Utente non trovato";
+    private static final String CORSA_NON_TROVATA = "Corsa non trovata";
+
     private final BookingRepository bookingRepository;
     private final RideRepository rideRepository;
     private final UserRepository userRepository;
@@ -34,10 +37,10 @@ public class BookingService {
     public BookingResponse createBooking(String username, CreateBookingRequest request) {
 
         User passenger = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Utente non trovato"));
+                .orElseThrow(() -> new RuntimeException(UTENTE_NON_TROVATO));
 
         Ride ride = rideRepository.findById(request.getRideId())
-                .orElseThrow(() -> new RuntimeException("Corsa non trovato"));
+                .orElseThrow(() -> new RuntimeException(CORSA_NON_TROVATA));
 
         if (!ride.getStatus().equals("OPEN")) {
             throw new RuntimeException("Corsa non ancora disponibile per prenotazioni");
@@ -72,7 +75,7 @@ public class BookingService {
     public void cancelBooking(String username, UUID bookingId) {
 
         User passenger = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Utente non trovato"));
+                .orElseThrow(() -> new RuntimeException(UTENTE_NON_TROVATO));
 
         Booking booking = bookingRepository.findByIdAndPassenger(bookingId, passenger)
                 .orElseThrow(() -> new RuntimeException("Prenotazione non trovata"));
@@ -97,7 +100,7 @@ public class BookingService {
     public List<BookingResponse> getMyBookings(String username) {
 
         User passenger = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Utente non trovato"));
+                .orElseThrow(() -> new RuntimeException(UTENTE_NON_TROVATO));
 
         return bookingRepository.findByPassenger(passenger)
                 .stream()

@@ -20,7 +20,7 @@ import java.util.stream.Stream;
 public class RideService {
 
     private static final String UTENTE_NON_TROVATO = "Utente non trovato";
-
+    private static final String CORSA_NON_TROVATA = "Corsa non trovata";
     private final RideRepository rideRepository;
     private final UserRepository userRepository;
     private final RideMapper rideMapper;
@@ -74,7 +74,7 @@ public class RideService {
                 .orElseThrow(() -> new RuntimeException(UTENTE_NON_TROVATO));
 
         Ride ride = rideRepository.findById(rideId)
-                .orElseThrow(() -> new RuntimeException("Corsa non trovata"));
+                .orElseThrow(() -> new RuntimeException(CORSA_NON_TROVATA));
 
         if (!ride.getDriver().getId().equals(driver.getId())) {
             throw new RuntimeException("Non sei il guidatore di questa corsa");
@@ -97,7 +97,7 @@ public class RideService {
                 .orElseThrow(() -> new RuntimeException(UTENTE_NON_TROVATO));
 
         Ride ride = rideRepository.findById(rideId)
-                .orElseThrow(() -> new RuntimeException("Corsa non trovata"));
+                .orElseThrow(() -> new RuntimeException(CORSA_NON_TROVATA));
 
         if (!ride.getDriver().getId().equals(driver.getId())) {
             throw new RuntimeException("Non sei il guidatore di questa corsa");
@@ -120,7 +120,7 @@ public class RideService {
                 .orElseThrow(() -> new RuntimeException(UTENTE_NON_TROVATO));
 
         Ride ride = rideRepository.findById(rideId)
-                .orElseThrow(() -> new RuntimeException("Corsa non trovata"));
+                .orElseThrow(() -> new RuntimeException(CORSA_NON_TROVATA));
 
         if (!ride.getDriver().getId().equals(driver.getId())) {
             throw new RuntimeException("Non sei il guidatore di questa corsa");

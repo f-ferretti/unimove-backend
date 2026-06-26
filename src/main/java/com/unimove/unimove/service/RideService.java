@@ -21,6 +21,8 @@ public class RideService {
 
     private static final String UTENTE_NON_TROVATO = "Utente non trovato";
     private static final String CORSA_NON_TROVATA = "Corsa non trovata";
+    private static final String NON_SEI_IL_GUIDATORE = "Non sei il guidatore di questa corsa";
+
     private final RideRepository rideRepository;
     private final UserRepository userRepository;
     private final RideMapper rideMapper;
@@ -33,8 +35,7 @@ public class RideService {
 
     public RideResponse createRide(String username, CreateRideRequest request) {
 
-        User driver = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException(UTENTE_NON_TROVATO));
+        User driver = getUser(username);
 
         List<String> hotspots = request.getHotspots();
 
@@ -70,15 +71,8 @@ public class RideService {
     @Transactional
     public RideResponse startRide(String username, UUID rideId) {
 
-        User driver = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException(UTENTE_NON_TROVATO));
-
-        Ride ride = rideRepository.findById(rideId)
-                .orElseThrow(() -> new RuntimeException(CORSA_NON_TROVATA));
-
-        if (!ride.getDriver().getId().equals(driver.getId())) {
-            throw new RuntimeException("Non sei il guidatore di questa corsa");
-        }
+        User driver = getUser(username);
+        Ride ride = getVerifiedRide(rideId, driver);
 
         if (!ride.getStatus().equals("OPEN")) {
             throw new RuntimeException("Corsa non ancora disponibile per partenza");
@@ -93,15 +87,8 @@ public class RideService {
     @Transactional
     public RideResponse completeRide(String username, UUID rideId) {
 
-        User driver = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException(UTENTE_NON_TROVATO));
-
-        Ride ride = rideRepository.findById(rideId)
-                .orElseThrow(() -> new RuntimeException(CORSA_NON_TROVATA));
-
-        if (!ride.getDriver().getId().equals(driver.getId())) {
-            throw new RuntimeException("Non sei il guidatore di questa corsa");
-        }
+        User driver = getUser(username);
+        Ride ride = getVerifiedRide(rideId, driver);
 
         if (!ride.getStatus().equals("IN_PROGRESS")) {
             throw new RuntimeException("Corsa non ancora in corso");
@@ -116,15 +103,8 @@ public class RideService {
     @Transactional
     public void deleteRide(String username, UUID rideId) {
 
-        User driver = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException(UTENTE_NON_TROVATO));
-
-        Ride ride = rideRepository.findById(rideId)
-                .orElseThrow(() -> new RuntimeException(CORSA_NON_TROVATA));
-
-        if (!ride.getDriver().getId().equals(driver.getId())) {
-            throw new RuntimeException("Non sei il guidatore di questa corsa");
-        }
+        User driver = getUser(username);
+        Ride ride = getVerifiedRide(rideId, driver);
 
         if (!ride.getStatus().equals("OPEN")) {
             throw new RuntimeException("Corsa non ancora disponibile per cancellazione");
@@ -140,8 +120,7 @@ public class RideService {
     @Transactional(readOnly = true)
     public List<RideResponse> getMyRides(String username, String status) {
 
-        User driver = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException(UTENTE_NON_TROVATO));
+        User driver = getUser(username);
 
         return rideRepository.findByDriverAndStatus(driver, status)
                 .stream()
@@ -152,8 +131,7 @@ public class RideService {
     @Transactional(readOnly = true)
     public List<RideResponse> getArchive(String username) {
 
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException(UTENTE_NON_TROVATO));
+        User user = getUser(username);
 
         List<RideResponse> asDriver = rideRepository.findCompletedByDriver(user)
                 .stream()
@@ -168,6 +146,22 @@ public class RideService {
         return Stream.concat(asDriver.stream(), asPassenger.stream())
                 .distinct()
                 .toList();
+    }
+
+    private User getUser(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException(UTENTE_NON_TROVATO));
+    }
+
+    private Ride getVerifiedRide(UUID rideId, User driver) {
+        Ride ride = rideRepository.findById(rideId)
+                .orElseThrow(() -> new RuntimeException(CORSA_NON_TROVATA));
+
+        if (!ride.getDriver().getId().equals(driver.getId())) {
+            throw new RuntimeException(NON_SEI_IL_GUIDATORE);
+        }
+
+        return ride;
     }
 
     private String getHotspot(List<String> hotspots, int index) {

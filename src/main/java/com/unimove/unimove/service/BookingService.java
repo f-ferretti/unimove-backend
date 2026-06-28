@@ -2,6 +2,8 @@ package com.unimove.unimove.service;
 
 import com.unimove.unimove.dto.request.CreateBookingRequest;
 import com.unimove.unimove.dto.response.BookingResponse;
+import com.unimove.unimove.exception.InvalidRequestException;
+import com.unimove.unimove.exception.ResourceNotFoundException;
 import com.unimove.unimove.model.Booking;
 import com.unimove.unimove.model.Ride;
 import com.unimove.unimove.model.User;
@@ -37,22 +39,22 @@ public class BookingService {
     public BookingResponse createBooking(String username, CreateBookingRequest request) {
 
         User passenger = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException(UTENTE_NON_TROVATO));
+                .orElseThrow(() -> new ResourceNotFoundException(UTENTE_NON_TROVATO));
 
         Ride ride = rideRepository.findById(request.getRideId())
-                .orElseThrow(() -> new RuntimeException(CORSA_NON_TROVATA));
+                .orElseThrow(() -> new ResourceNotFoundException(CORSA_NON_TROVATA));
 
         if (!ride.getStatus().equals("OPEN")) {
-            throw new RuntimeException("Corsa non ancora disponibile per prenotazioni");
+            throw new InvalidRequestException("Corsa non ancora disponibile per prenotazioni");
         }
 
 
         if (ride.getDriver().getId().equals(passenger.getId())) {
-            throw new RuntimeException("Non puoi prenotare la tua stessa corsa");
+            throw new InvalidRequestException("Non puoi prenotare la tua stessa corsa");
         }
 
         if (bookingRepository.existsByRideAndPassenger(ride, passenger)) {
-            throw new RuntimeException("Hai già prenotato questa corsa");
+            throw new InvalidRequestException("Hai già prenotato questa corsa");
         }
 
         Booking booking = Booking.builder()
@@ -65,7 +67,7 @@ public class BookingService {
 
         int updated = rideRepository.decrementAvailableSeats(ride.getId());
         if (updated == 0) {
-            throw new RuntimeException("Nessun posto disponibile");
+            throw new InvalidRequestException("Nessun posto disponibile");
         }
 
         return bookingMapper.toResponse(booking);
@@ -75,20 +77,20 @@ public class BookingService {
     public void cancelBooking(String username, UUID bookingId) {
 
         User passenger = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException(UTENTE_NON_TROVATO));
+                .orElseThrow(() -> new ResourceNotFoundException(UTENTE_NON_TROVATO));
 
         Booking booking = bookingRepository.findByIdAndPassenger(bookingId, passenger)
-                .orElseThrow(() -> new RuntimeException("Prenotazione non trovata"));
+                .orElseThrow(() -> new ResourceNotFoundException("Prenotazione non trovata"));
 
         Ride ride = booking.getRide();
 
         if (ride.getStatus().equals("OPEN")) {
             if (LocalDateTime.now().isAfter(ride.getDepartureTime().minusHours(24))) {
-                throw new RuntimeException("Non puoi cancellare una prenotazione con meno di 24 ore dalla partenza");
+                throw new InvalidRequestException("Non puoi cancellare una prenotazione con meno di 24 ore dalla partenza");
             }
         } else if (ride.getStatus().equals("IN_PROGRESS")) {
         } else {
-            throw new RuntimeException("Non puoi abbandonare una corsa già terminata");
+            throw new InvalidRequestException("Non puoi abbandonare una corsa già terminata");
         }
 
         rideRepository.incrementAvailableSeats(ride.getId());
@@ -100,7 +102,7 @@ public class BookingService {
     public List<BookingResponse> getMyBookings(String username) {
 
         User passenger = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException(UTENTE_NON_TROVATO));
+                .orElseThrow(() -> new ResourceNotFoundException(UTENTE_NON_TROVATO));
 
         return bookingRepository.findByPassenger(passenger)
                 .stream()

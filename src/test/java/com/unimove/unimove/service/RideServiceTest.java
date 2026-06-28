@@ -2,6 +2,7 @@ package com.unimove.unimove.service;
 
 import com.unimove.unimove.dto.request.CreateRideRequest;
 import com.unimove.unimove.dto.response.RideResponse;
+import com.unimove.unimove.exception.ResourceNotFoundException;
 import com.unimove.unimove.model.Ride;
 import com.unimove.unimove.model.Role;
 import com.unimove.unimove.model.User;
@@ -120,7 +121,7 @@ class RideServiceTest {
         when(userRepository.findByUsername("inesistente")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> rideService.createRide("inesistente", request))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Utente non trovato");
 
         verify(rideRepository, never()).save(any());

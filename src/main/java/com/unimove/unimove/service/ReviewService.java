@@ -2,6 +2,9 @@ package com.unimove.unimove.service;
 
 import com.unimove.unimove.dto.request.CreateReviewRequest;
 import com.unimove.unimove.dto.response.ReviewResponse;
+import com.unimove.unimove.exception.InvalidRequestException;
+import com.unimove.unimove.exception.ResourceNotFoundException;
+import com.unimove.unimove.exception.UnauthorizedException;
 import com.unimove.unimove.model.Review;
 import com.unimove.unimove.model.Ride;
 import com.unimove.unimove.model.User;
@@ -13,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class ReviewService {
@@ -39,21 +41,21 @@ public class ReviewService {
     public ReviewResponse createReview(String username, CreateReviewRequest request) {
 
         User reviewer = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException(UTENTE_NON_TROVATO));
+                .orElseThrow(() -> new ResourceNotFoundException(UTENTE_NON_TROVATO));
 
         Ride ride = rideRepository.findById(request.getRideId())
-                .orElseThrow(() -> new RuntimeException(CORSA_NON_TROVATA));
+                .orElseThrow(() -> new ResourceNotFoundException(CORSA_NON_TROVATA));
 
         if (!ride.getStatus().equals("COMPLETED")) {
-            throw new RuntimeException("Puoi recensire solo corse completate");
+            throw new InvalidRequestException("Puoi recensire solo corse completate");
         }
 
         if (!bookingRepository.existsByRideAndPassenger(ride, reviewer)) {
-            throw new RuntimeException("Non sei stato passeggero di questa corsa");
+            throw new UnauthorizedException("Non sei stato passeggero di questa corsa");
         }
 
         if (reviewRepository.existsByRideAndReviewer(ride, reviewer)) {
-            throw new RuntimeException("Hai gia recensito questa corsa");
+            throw new InvalidRequestException("Hai gia recensito questa corsa");
         }
 
         User reviewed = ride.getDriver();
@@ -75,7 +77,7 @@ public class ReviewService {
     public List<ReviewResponse> getUserReviews(String username) {
 
         User reviewed = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException(UTENTE_NON_TROVATO));
+                .orElseThrow(() -> new ResourceNotFoundException(UTENTE_NON_TROVATO));
 
         return reviewRepository.findByReviewed(reviewed)
                 .stream()

@@ -2,6 +2,9 @@ package com.unimove.unimove.service;
 
 import com.unimove.unimove.dto.request.CreateRideRequest;
 import com.unimove.unimove.dto.response.RideResponse;
+import com.unimove.unimove.exception.InvalidRequestException;
+import com.unimove.unimove.exception.ResourceNotFoundException;
+import com.unimove.unimove.exception.UnauthorizedException;
 import com.unimove.unimove.model.Ride;
 import com.unimove.unimove.model.User;
 import com.unimove.unimove.repository.RideRepository;
@@ -75,7 +78,7 @@ public class RideService {
         Ride ride = getVerifiedRide(rideId, driver);
 
         if (!ride.getStatus().equals("OPEN")) {
-            throw new RuntimeException("Corsa non ancora disponibile per partenza");
+            throw new InvalidRequestException("Corsa non ancora disponibile per partenza");
         }
 
         ride.setStatus("IN_PROGRESS");
@@ -91,7 +94,7 @@ public class RideService {
         Ride ride = getVerifiedRide(rideId, driver);
 
         if (!ride.getStatus().equals("IN_PROGRESS")) {
-            throw new RuntimeException("Corsa non ancora in corso");
+            throw new InvalidRequestException("Corsa non ancora in corso");
         }
 
         ride.setStatus("COMPLETED");
@@ -107,11 +110,11 @@ public class RideService {
         Ride ride = getVerifiedRide(rideId, driver);
 
         if (!ride.getStatus().equals("OPEN")) {
-            throw new RuntimeException("Corsa non ancora disponibile per cancellazione");
+            throw new InvalidRequestException("Corsa non ancora disponibile per cancellazione");
         }
 
         if (LocalDateTime.now(ZoneId.of("Europe/Rome")).isAfter(ride.getDepartureTime().minusHours(48))) {
-            throw new RuntimeException("Non puoi cancellare una corsa con meno di 48 ore dalla partenza");
+            throw new InvalidRequestException("Non puoi cancellare una corsa con meno di 48 ore dalla partenza");
         }
 
         rideRepository.delete(ride);
@@ -150,15 +153,15 @@ public class RideService {
 
     private User getUser(String username) {
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException(UTENTE_NON_TROVATO));
+                .orElseThrow(() -> new ResourceNotFoundException(UTENTE_NON_TROVATO));
     }
 
     private Ride getVerifiedRide(UUID rideId, User driver) {
         Ride ride = rideRepository.findById(rideId)
-                .orElseThrow(() -> new RuntimeException(CORSA_NON_TROVATA));
+                .orElseThrow(() -> new ResourceNotFoundException(CORSA_NON_TROVATA));
 
         if (!ride.getDriver().getId().equals(driver.getId())) {
-            throw new RuntimeException(NON_SEI_IL_GUIDATORE);
+            throw new UnauthorizedException(NON_SEI_IL_GUIDATORE);
         }
 
         return ride;

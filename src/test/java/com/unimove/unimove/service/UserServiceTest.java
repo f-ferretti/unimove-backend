@@ -6,6 +6,9 @@ import com.unimove.unimove.dto.request.UpdatePreferenceRequest;
 import com.unimove.unimove.dto.response.RideResponse;
 import com.unimove.unimove.dto.response.RoutePreferenceResponse;
 import com.unimove.unimove.dto.response.UserProfileResponse;
+import com.unimove.unimove.exception.InvalidRequestException;
+import com.unimove.unimove.exception.ResourceNotFoundException;
+import com.unimove.unimove.exception.UnauthorizedException;
 import com.unimove.unimove.model.Ride;
 import com.unimove.unimove.model.RoutePreference;
 import com.unimove.unimove.model.Role;
@@ -98,7 +101,7 @@ class UserServiceTest {
         when(userRepository.findByUsername("inesistente")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> userService.getProfile("inesistente"))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Utente non trovato");
     }
 
@@ -121,7 +124,7 @@ class UserServiceTest {
         when(userRepository.findByUsername("inesistente")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> userService.updatePreferences("inesistente", request))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Utente non trovato");
     }
 
@@ -146,7 +149,7 @@ class UserServiceTest {
         when(userRepository.findByUsername("inesistente")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> userService.updateIban("inesistente", request))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Utente non trovato");
     }
 
@@ -202,7 +205,7 @@ class UserServiceTest {
         when(routePreferenceRepository.countByUser(testUser)).thenReturn(3);
 
         assertThatThrownBy(() -> userService.addRoute("l.lanese", request))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(InvalidRequestException.class)
                 .hasMessage("Massimo 3 tratte preferite consentite");
 
         verify(routePreferenceRepository, never()).save(any());
@@ -245,7 +248,7 @@ class UserServiceTest {
         when(routePreferenceRepository.findById(routeId)).thenReturn(Optional.of(route));
 
         assertThatThrownBy(() -> userService.deleteRoute("l.lanese", routeId))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(UnauthorizedException.class)
                 .hasMessage("Non sei autorizzato a eliminare questa tratta preferita");
 
         verify(routePreferenceRepository, never()).delete(route);
@@ -259,7 +262,7 @@ class UserServiceTest {
 
 
         assertThatThrownBy(() -> userService.deleteRoute("l.lanese", routeId))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Tratta preferita non trovata");
     }
 }

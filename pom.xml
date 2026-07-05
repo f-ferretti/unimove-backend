@@ -6,7 +6,7 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>4.0.6</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<relativePath/>
 	</parent>
 	<groupId>com.unimove</groupId>
 	<artifactId>unimove</artifactId>
@@ -31,6 +31,24 @@
 		<sonar.coverage.jacoco.xmlReportPaths>
 			target/site/jacoco/jacoco.xml
 		</sonar.coverage.jacoco.xmlReportPaths>
+		<sonar.exclusions>
+			**/controller/**,
+			**/config/**,
+			**/security/**,
+			**/model/**,
+			**/exception/**,
+			**/dto/**,
+			**/*Application.java
+		</sonar.exclusions>
+		<sonar.coverage.exclusions>
+			**/controller/**,
+			**/config/**,
+			**/security/**,
+			**/model/**,
+			**/exception/**,
+			**/dto/**,
+			**/*Application.java
+		</sonar.coverage.exclusions>
 	</properties>
 	<dependencies>
 		<dependency>

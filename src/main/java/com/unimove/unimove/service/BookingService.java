@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
@@ -85,7 +86,7 @@ public class BookingService {
         Ride ride = booking.getRide();
 
         if (ride.getStatus().equals("OPEN")) {
-            if (LocalDateTime.now().isAfter(ride.getDepartureTime().minusHours(24))) {
+            if (LocalDateTime.now(ZoneId.of("Europe/Rome")).isAfter(ride.getDepartureTime().minusHours(24))) {
                 throw new InvalidRequestException("Non puoi cancellare una prenotazione con meno di 24 ore dalla partenza");
             }
         } else if (ride.getStatus().equals("IN_PROGRESS")) {

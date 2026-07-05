@@ -3,6 +3,9 @@ package com.unimove.unimove.service;
 import com.unimove.unimove.dto.request.LoginRequest;
 import com.unimove.unimove.dto.response.CinecaLoginResponse;
 import com.unimove.unimove.dto.response.LoginResponse;
+import com.unimove.unimove.exception.AuthFailedException;
+import com.unimove.unimove.exception.InvalidRequestException;
+import com.unimove.unimove.exception.UnauthorizedException;
 import com.unimove.unimove.model.Role;
 import com.unimove.unimove.model.User;
 import com.unimove.unimove.repository.UserRepository;
@@ -38,22 +41,24 @@ public class AuthService {
                 .encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
 
         CinecaLoginResponse cinecaResponse;
-        try{
+        try {
             cinecaResponse = restClient.get()
                     .uri("https://unimol.esse3.cineca.it/e3rest/api/login?optionalFields=jwt")
                     .header("Authorization", basicAuth)
                     .header("Accept", "application/json")
                     .retrieve()
-                    .onStatus(HttpStatusCode::isError, (req, res) ->{
-                        throw new RuntimeException("Credenziali non valide");
+                    .onStatus(HttpStatusCode::isError, (req, res) -> {
+                        throw new AuthFailedException("Credenziali non valide");
                     })
                     .body(CinecaLoginResponse.class);
-        } catch(Exception e) {
-            throw new RuntimeException("Credenziali non valide");
+        } catch (AuthFailedException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AuthFailedException("Credenziali non valide");
         }
 
-        if(cinecaResponse == null || cinecaResponse.getUser() == null) {
-            throw new RuntimeException("Risposta CINECA non valida");
+        if (cinecaResponse == null || cinecaResponse.getUser() == null) {
+            throw new AuthFailedException("Risposta CINECA non valida");
         }
 
         CinecaLoginResponse.UserInfo userInfo = cinecaResponse.getUser();
@@ -67,17 +72,21 @@ public class AuthService {
         Optional<User> existing = userRepository.findByUsername(request.getUsername());
         User user;
 
-        if(existing.isEmpty()) {
+        if (existing.isEmpty()) {
             user = User.builder()
                     .username(request.getUsername())
                     .email(email)
                     .fullName(fullName)
                     .role(role)
+                    .persId(userInfo.getPersId())
+                    .avatarUrl(fetchAvatarAsBase64(request.getUsername(), request.getPassword(), userInfo.getPersId()))
                     .build();
         } else {
             user = existing.get();
             user.setFullName(fullName);
             user.setEmail(email);
+            user.setPersId(userInfo.getPersId());
+            user.setAvatarUrl(fetchAvatarAsBase64(request.getUsername(), request.getPassword(), userInfo.getPersId()));
         }
 
         userRepository.save(user);
@@ -89,7 +98,7 @@ public class AuthService {
 
     public LoginResponse register(LoginRequest request) {
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-            throw new RuntimeException("Username già esistente");
+            throw new InvalidRequestException("Username già esistente");
         }
 
         User user = User.builder()
@@ -107,10 +116,9 @@ public class AuthService {
     }
 
     private Role mapRole(String grpDes) {
-
-        if(grpDes == null)
+        if (grpDes == null)
             return Role.STUDENT;
-        return switch(grpDes.toUpperCase()) {
+        return switch (grpDes.toUpperCase()) {
             case "DOCENTI" -> Role.PROFESSOR;
             case "PTA", "DIPENDENTI" -> Role.STAFF;
             default -> Role.STUDENT;
@@ -118,9 +126,32 @@ public class AuthService {
     }
 
     private String buildEmail(String username, Role role) {
-        return switch(role) {
+        return switch (role) {
             case STUDENT -> username + "@studenti.unimol.it";
             case PROFESSOR, STAFF -> username + "@docenti.unimol.it";
         };
+    }
+
+    private String fetchAvatarAsBase64(String username, String password, Long persId) {
+        if (persId == null) return null;
+
+        String credentials = username + ":" + password;
+        String basicAuth = "Basic " + Base64.getEncoder()
+                .encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
+
+        try {
+            byte[] imageBytes = restClient.get()
+                    .uri("https://unimol.esse3.cineca.it/e3rest/api/anagrafica-service-v2/persone/" + persId + "/foto")
+                    .header("Authorization", basicAuth)
+                    .header("Accept", "application/octet-stream")
+                    .retrieve()
+                    .body(byte[].class);
+
+            if (imageBytes == null || imageBytes.length == 0) return null;
+
+            return "data:image/jpeg;base64," + Base64.getEncoder().encodeToString(imageBytes);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

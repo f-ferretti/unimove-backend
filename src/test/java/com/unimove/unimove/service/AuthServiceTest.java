@@ -3,6 +3,8 @@ package com.unimove.unimove.service;
 import com.unimove.unimove.dto.request.LoginRequest;
 import com.unimove.unimove.dto.response.CinecaLoginResponse;
 import com.unimove.unimove.dto.response.LoginResponse;
+import com.unimove.unimove.exception.AuthFailedException;
+import com.unimove.unimove.exception.InvalidRequestException;
 import com.unimove.unimove.model.Role;
 import com.unimove.unimove.model.User;
 import com.unimove.unimove.repository.UserRepository;
@@ -125,7 +127,7 @@ class AuthServiceTest {
         when(requestHeadersSpec.retrieve()).thenThrow(new RuntimeException("401 Unauthorized"));
 
         assertThatThrownBy(() -> authService.login(loginRequest))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(AuthFailedException.class)
                 .hasMessage("Credenziali non valide");
 
         verify(userRepository, never()).save(any());
@@ -139,7 +141,7 @@ class AuthServiceTest {
         mockCinecaCall(cinecaResponse);
 
         assertThatThrownBy(() -> authService.login(loginRequest))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(AuthFailedException.class)
                 .hasMessage("Risposta CINECA non valida");
     }
 
@@ -226,7 +228,7 @@ class AuthServiceTest {
         when(userRepository.findByUsername("l.lanese")).thenReturn(Optional.of(new User()));
 
         assertThatThrownBy(() -> authService.register(loginRequest))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(InvalidRequestException.class)
                 .hasMessage("Username già esistente");
 
         verify(userRepository, never()).save(any());

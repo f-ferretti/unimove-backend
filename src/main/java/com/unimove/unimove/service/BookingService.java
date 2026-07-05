@@ -1,0 +1,113 @@
+package com.unimove.unimove.service;
+
+import com.unimove.unimove.dto.request.CreateBookingRequest;
+import com.unimove.unimove.dto.response.BookingResponse;
+import com.unimove.unimove.exception.InvalidRequestException;
+import com.unimove.unimove.exception.ResourceNotFoundException;
+import com.unimove.unimove.model.Booking;
+import com.unimove.unimove.model.Ride;
+import com.unimove.unimove.model.User;
+import com.unimove.unimove.repository.BookingRepository;
+import com.unimove.unimove.repository.RideRepository;
+import com.unimove.unimove.repository.UserRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.List;
+import java.util.UUID;
+
+@Service
+public class BookingService {
+
+    private static final String UTENTE_NON_TROVATO = "Utente non trovato";
+    private static final String CORSA_NON_TROVATA = "Corsa non trovata";
+
+    private final BookingRepository bookingRepository;
+    private final RideRepository rideRepository;
+    private final UserRepository userRepository;
+    private final BookingMapper bookingMapper;
+
+    public BookingService(BookingRepository bookingRepository, RideRepository rideRepository, UserRepository userRepository, BookingMapper bookingMapper) {
+        this.bookingRepository = bookingRepository;
+        this.rideRepository = rideRepository;
+        this.userRepository = userRepository;
+        this.bookingMapper = bookingMapper;
+    }
+
+    @Transactional
+    public BookingResponse createBooking(String username, CreateBookingRequest request) {
+
+        User passenger = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException(UTENTE_NON_TROVATO));
+
+        Ride ride = rideRepository.findById(request.getRideId())
+                .orElseThrow(() -> new ResourceNotFoundException(CORSA_NON_TROVATA));
+
+        if (!ride.getStatus().equals("OPEN")) {
+            throw new InvalidRequestException("Corsa non ancora disponibile per prenotazioni");
+        }
+
+
+        if (ride.getDriver().getId().equals(passenger.getId())) {
+            throw new InvalidRequestException("Non puoi prenotare la tua stessa corsa");
+        }
+
+        if (bookingRepository.existsByRideAndPassenger(ride, passenger)) {
+            throw new InvalidRequestException("Hai già prenotato questa corsa");
+        }
+
+        Booking booking = Booking.builder()
+                .ride(ride)
+                .passenger(passenger)
+                .hotspotChosen(request.getHotspotChosen())
+                .build();
+
+        bookingRepository.save(booking);
+
+        int updated = rideRepository.decrementAvailableSeats(ride.getId());
+        if (updated == 0) {
+            throw new InvalidRequestException("Nessun posto disponibile");
+        }
+
+        return bookingMapper.toResponse(booking);
+    }
+
+    @Transactional
+    public void cancelBooking(String username, UUID bookingId) {
+
+        User passenger = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException(UTENTE_NON_TROVATO));
+
+        Booking booking = bookingRepository.findByIdAndPassenger(bookingId, passenger)
+                .orElseThrow(() -> new ResourceNotFoundException("Prenotazione non trovata"));
+
+        Ride ride = booking.getRide();
+
+        if (ride.getStatus().equals("OPEN")) {
+            if (LocalDateTime.now(ZoneId.of("Europe/Rome")).isAfter(ride.getDepartureTime().minusHours(24))) {
+                throw new InvalidRequestException("Non puoi cancellare una prenotazione con meno di 24 ore dalla partenza");
+            }
+        } else if (ride.getStatus().equals("IN_PROGRESS")) {
+        } else {
+            throw new InvalidRequestException("Non puoi abbandonare una corsa già terminata");
+        }
+
+        rideRepository.incrementAvailableSeats(ride.getId());
+
+        bookingRepository.delete(booking);
+    }
+
+    @Transactional(readOnly = true)
+    public List<BookingResponse> getMyBookings(String username) {
+
+        User passenger = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException(UTENTE_NON_TROVATO));
+
+        return bookingRepository.findByPassenger(passenger)
+                .stream()
+                .map(bookingMapper::toResponse)
+                .toList();
+    }
+}

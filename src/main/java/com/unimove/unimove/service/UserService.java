@@ -6,6 +6,9 @@ import com.unimove.unimove.dto.request.UpdatePreferenceRequest;
 import com.unimove.unimove.dto.response.RideResponse;
 import com.unimove.unimove.dto.response.RoutePreferenceResponse;
 import com.unimove.unimove.dto.response.UserProfileResponse;
+import com.unimove.unimove.exception.InvalidRequestException;
+import com.unimove.unimove.exception.ResourceNotFoundException;
+import com.unimove.unimove.exception.UnauthorizedException;
 import com.unimove.unimove.model.RoutePreference;
 import com.unimove.unimove.model.User;
 import com.unimove.unimove.repository.RideRepository;
@@ -84,7 +87,7 @@ public class UserService {
         User user = getUser(username);
 
         if(routePreferenceRepository.countByUser(user) >= 3) {
-            throw new RuntimeException("Massimo 3 tratte preferite consentite");
+            throw new InvalidRequestException("Massimo 3 tratte preferite consentite");
         }
 
         RoutePreference route = RoutePreference.builder()
@@ -104,10 +107,10 @@ public class UserService {
     public void deleteRoute(String username, UUID routeId){
         User user = getUser(username);
         RoutePreference route = routePreferenceRepository.findById(routeId)
-                .orElseThrow(() -> new RuntimeException("Tratta preferita non trovata"));
+                .orElseThrow(() -> new ResourceNotFoundException("Tratta preferita non trovata"));
 
         if(!route.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("Non sei autorizzato a eliminare questa tratta preferita");
+            throw new UnauthorizedException("Non sei autorizzato a eliminare questa tratta preferita");
         }
 
         routePreferenceRepository.delete(route);
@@ -115,6 +118,6 @@ public class UserService {
 
     private User getUser(String username) {
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Utente non trovato"));
+                .orElseThrow(() -> new ResourceNotFoundException("Utente non trovato"));
     }
 }

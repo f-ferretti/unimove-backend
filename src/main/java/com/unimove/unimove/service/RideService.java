@@ -36,6 +36,7 @@ public class RideService {
         this.rideMapper = rideMapper;
     }
 
+    @Transactional
     public RideResponse createRide(String username, CreateRideRequest request) {
 
         User driver = getUser(username);

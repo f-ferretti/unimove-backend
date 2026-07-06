@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
@@ -41,7 +42,7 @@ public class UserService {
         User user = getUser(username);
 
         List<RideResponse> upcomingRides = rideRepository
-                .findUpcomingByDriver(user, LocalDateTime.now())
+                .findUpcomingByDriver(user, LocalDateTime.now(ZoneId.of("Europe/Rome")))
                 .stream()
                 .map(rideMapper::toResponse)
                 .toList();

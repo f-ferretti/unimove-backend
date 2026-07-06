@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -161,7 +162,7 @@ class RideServiceTest {
 
     @Test
     void searchRide_conFiltriCombinati_passaTuttiIParametriAlRepository() {
-        LocalDate date = LocalDate.of(2026, 7, 1);
+        LocalDate date = LocalDate.of(2026, Month.JULY, 1);
 
         when(rideRepository.search("l.lanese", "Campobasso", "Roma", date))
                 .thenReturn(List.of());

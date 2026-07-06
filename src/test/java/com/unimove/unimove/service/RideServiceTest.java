@@ -210,10 +210,12 @@ class RideServiceTest {
                 .status("CLOSED")
                 .build();
 
-        when(userRepository.findByUsername("l.lanese")).thenReturn(Optional.of(driver));
-        when(rideRepository.findById(ride.getId())).thenReturn(Optional.of(ride));
+        UUID rideId = ride.getId();
 
-        assertThatThrownBy(() -> rideService.startRide("l.lanese", ride.getId()))
+        when(userRepository.findByUsername("l.lanese")).thenReturn(Optional.of(driver));
+        when(rideRepository.findById(rideId)).thenReturn(Optional.of(ride));
+
+        assertThatThrownBy(() -> rideService.startRide("l.lanese", rideId))
                 .isInstanceOf(InvalidRequestException.class)
                 .hasMessage("Corsa non ancora disponibile per partenza");
 
@@ -233,10 +235,12 @@ class RideServiceTest {
                 .status("OPEN")
                 .build();
 
-        when(userRepository.findByUsername("altro.utente")).thenReturn(Optional.of(altroUtente));
-        when(rideRepository.findById(ride.getId())).thenReturn(Optional.of(ride));
+        UUID rideId = ride.getId();
 
-        assertThatThrownBy(() -> rideService.startRide("altro.utente", ride.getId()))
+        when(userRepository.findByUsername("altro.utente")).thenReturn(Optional.of(altroUtente));
+        when(rideRepository.findById(rideId)).thenReturn(Optional.of(ride));
+
+        assertThatThrownBy(() -> rideService.startRide("altro.utente", rideId))
                 .isInstanceOf(UnauthorizedException.class)
                 .hasMessage("Non sei il guidatore di questa corsa");
 
@@ -273,10 +277,12 @@ class RideServiceTest {
                 .status("OPEN")
                 .build();
 
-        when(userRepository.findByUsername("l.lanese")).thenReturn(Optional.of(driver));
-        when(rideRepository.findById(ride.getId())).thenReturn(Optional.of(ride));
+        UUID rideId = ride.getId();
 
-        assertThatThrownBy(() -> rideService.completeRide("l.lanese", ride.getId()))
+        when(userRepository.findByUsername("l.lanese")).thenReturn(Optional.of(driver));
+        when(rideRepository.findById(rideId)).thenReturn(Optional.of(ride));
+
+        assertThatThrownBy(() -> rideService.completeRide("l.lanese", rideId))
                 .isInstanceOf(InvalidRequestException.class)
                 .hasMessage("Corsa non ancora in corso");
 
@@ -309,10 +315,12 @@ class RideServiceTest {
                 .departureTime(LocalDateTime.now().plusHours(10))
                 .build();
 
-        when(userRepository.findByUsername("l.lanese")).thenReturn(Optional.of(driver));
-        when(rideRepository.findById(ride.getId())).thenReturn(Optional.of(ride));
+        UUID rideId = ride.getId();
 
-        assertThatThrownBy(() -> rideService.deleteRide("l.lanese", ride.getId()))
+        when(userRepository.findByUsername("l.lanese")).thenReturn(Optional.of(driver));
+        when(rideRepository.findById(rideId)).thenReturn(Optional.of(ride));
+
+        assertThatThrownBy(() -> rideService.deleteRide("l.lanese", rideId))
                 .isInstanceOf(InvalidRequestException.class)
                 .hasMessage("Non puoi cancellare una corsa con meno di 48 ore dalla partenza");
 
@@ -328,10 +336,12 @@ class RideServiceTest {
                 .departureTime(LocalDateTime.now().plusDays(5))
                 .build();
 
-        when(userRepository.findByUsername("l.lanese")).thenReturn(Optional.of(driver));
-        when(rideRepository.findById(ride.getId())).thenReturn(Optional.of(ride));
+        UUID rideId = ride.getId();
 
-        assertThatThrownBy(() -> rideService.deleteRide("l.lanese", ride.getId()))
+        when(userRepository.findByUsername("l.lanese")).thenReturn(Optional.of(driver));
+        when(rideRepository.findById(rideId)).thenReturn(Optional.of(ride));
+
+        assertThatThrownBy(() -> rideService.deleteRide("l.lanese", rideId))
                 .isInstanceOf(InvalidRequestException.class)
                 .hasMessage("Corsa non ancora disponibile per cancellazione");
 

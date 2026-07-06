@@ -70,7 +70,7 @@ class AuthServiceTest {
         mockCinecaCall(cinecaResponse);
 
         when(userRepository.findByUsername("l.lanese")).thenReturn(Optional.empty());
-        when(jwtUtil.generateToken(eq("l.lanese"), eq("STUDENT"))).thenReturn("fake-jwt-token");
+        when(jwtUtil.generateToken("l.lanese", "STUDENT")).thenReturn("fake-jwt-token");
 
         LoginResponse response = authService.login(loginRequest);
 
@@ -237,7 +237,7 @@ class AuthServiceTest {
     @Test
     void register_usernameNuovo_creaUtenteStudent() {
         when(userRepository.findByUsername("l.lanese")).thenReturn(Optional.empty());
-        when(jwtUtil.generateToken(eq("l.lanese"), eq("STUDENT"))).thenReturn("fake-jwt-token");
+        when(jwtUtil.generateToken("l.lanese", "STUDENT")).thenReturn("fake-jwt-token");
 
         LoginResponse response = authService.register(loginRequest);
 

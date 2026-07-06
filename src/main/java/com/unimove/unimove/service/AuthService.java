@@ -5,7 +5,6 @@ import com.unimove.unimove.dto.response.CinecaLoginResponse;
 import com.unimove.unimove.dto.response.LoginResponse;
 import com.unimove.unimove.exception.AuthFailedException;
 import com.unimove.unimove.exception.InvalidRequestException;
-import com.unimove.unimove.exception.UnauthorizedException;
 import com.unimove.unimove.model.Role;
 import com.unimove.unimove.model.User;
 import com.unimove.unimove.repository.UserRepository;

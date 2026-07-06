@@ -90,6 +90,7 @@ public class BookingService {
                 throw new InvalidRequestException("Non puoi cancellare una prenotazione con meno di 24 ore dalla partenza");
             }
         } else if (ride.getStatus().equals("IN_PROGRESS")) {
+            //Abbandono corsa in corso consentito senza vincoli temporali
         } else {
             throw new InvalidRequestException("Non puoi abbandonare una corsa già terminata");
         }
